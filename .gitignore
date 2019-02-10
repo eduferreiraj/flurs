@@ -1,0 +1,4 @@
+*.pyc
+doc/_build
+dist/
+flurs.egg-info/
