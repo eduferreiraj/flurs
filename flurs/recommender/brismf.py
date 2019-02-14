@@ -7,14 +7,14 @@ import numpy as np
 
 class BRISMFRecommender(BRISMF, RecommenderMixin):
 
-    """Incremental Matrix Factorization (MF) recommender
+    """Biased Regularized Incremental Simultaneous Matrix Factorization
 
     References
     ----------
+    - G. Takács et al.
+        "Scalable collaborative filtering approaches for large recommender systems."
+        J. Mach. Learn. Res. 10, 623–656 (2009)
 
-    - J. Vinagre et al.
-      `Fast Incremental Matrix Factorization for Recommendation with Positive-only Feedback <http://link.springer.com/chapter/10.1007/978-3-319-08786-3_41>`_.
-      In *Proc. of UMAP 2014*, pp. 459-470, July 2014.
     """
 
     def initialize(self, static=False):

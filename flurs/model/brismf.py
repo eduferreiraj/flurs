@@ -5,11 +5,13 @@ import numpy as np
 
 class BRISMF(BaseEstimator):
 
-    """Incremental Matrix Factorization
+    """Biased Regularized Incremental Simultaneous Matrix Factorization 
 
-    J. Vinagre et al.
-    "Fast Incremental Matrix Factorization for Recommendation with Positive-Only Feedback"
-    In Proceedings of UMAP 2014, pages 459-470, July 2014.
+    References
+    ----------
+    - G. Takács et al.
+        "Scalable collaborative filtering approaches for large recommender systems."
+        J. Mach. Learn. Res. 10, 623–656 (2009)
 
     """
 
