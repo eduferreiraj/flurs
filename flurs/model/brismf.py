@@ -1,11 +1,12 @@
 from sklearn.base import BaseEstimator
+from .forgetting import NoForgetting
 
 import numpy as np
 
 
 class BRISMF(BaseEstimator):
 
-    """Biased Regularized Incremental Simultaneous Matrix Factorization 
+    """Biased Regularized Incremental Simultaneous Matrix Factorization
 
     References
     ----------
@@ -15,11 +16,12 @@ class BRISMF(BaseEstimator):
 
     """
 
-    def __init__(self, k=40, l2_reg=.01, learn_rate=.003):
+    def __init__(self, k=40, l2_reg=.01, learn_rate=.003, forgetting=NoForgetting):
         self.k = k
         self.l2_reg_u = l2_reg
         self.l2_reg_i = l2_reg
         self.learn_rate = learn_rate
+        self.forgetting = forgetting
 
         self.Q = np.array([])
 
@@ -34,6 +36,10 @@ class BRISMF(BaseEstimator):
 
         grad = -2. * (err * u_vec - self.l2_reg_i * i_vec)
         next_i_vec = i_vec - self.learn_rate * grad
+
+        forgetting.update(ua, ia, value)
+        next_i_vec = forgetting.item_forgetting(next_i_vec)
+        next_u_vec = forgetting.user_forgetting(next_u_vec)
 
         next_u_vec[0] = 1
         next_i_vec[1] = 1

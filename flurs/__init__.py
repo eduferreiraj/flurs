@@ -8,4 +8,4 @@ logger.addHandler(handler)
 
 __version__ = '0.0.3'
 
-__all__ = ['baseline', 'data', 'datasets', 'recommender', 'utils']
+__all__ = ['baseline', 'data', 'datasets', 'forgetting', 'recommender', 'utils']

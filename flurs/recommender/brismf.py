@@ -31,7 +31,7 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
     def register_item(self, item):
         super(BRISMFRecommender, self).register_item(item)
         i_vec = np.random.normal(0., 0.1, (1, self.k))
-        i_vec[1] = 1
+        i_vec[0][1] = 1
         if self.Q.size == 0:
             self.Q = i_vec
         else:

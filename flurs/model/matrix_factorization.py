@@ -33,5 +33,9 @@ class MatrixFactorization(BaseEstimator):
         grad = -2. * (err * u_vec - self.l2_reg_i * i_vec)
         next_i_vec = i_vec - self.learn_rate * grad
 
+        forgetting.update(ua, ia, value)
+        next_i_vec = forgetting.item_forgetting(next_i_vec)
+        next_u_vec = forgetting.user_forgetting(next_u_vec)
+
         self.users[ua]['vec'] = next_u_vec
         self.Q[ia] = next_i_vec
