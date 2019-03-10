@@ -2,3 +2,6 @@
 doc/_build
 dist/
 flurs.egg-info/
+results/
+__pycache__/
+.ipynb_checkpoints/
