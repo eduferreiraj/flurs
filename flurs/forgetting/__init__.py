@@ -1,9 +1,5 @@
 from .noforgetting import NoForgetting
-from .factorization_machine import FMRecommender
-from .matrix_factorization import MFRecommender
-from .online_sketch import SketchRecommender
-from .user_knn import UserKNNRecommender
-from .brismf import BRISMFRecommender
+from .forgetunpopularitems import ForgetUnpopularItems
+from .userfactorfading import UserFactorFading
 
-__all__ = ['NoForgetting', 'Sensitivity', 'Global', 'UserFactorFading',
-           'VariableUserFactorFading', 'ForgetUnpopularItems']
+__all__ = ['NoForgetting', 'ForgetUnpopularItems', 'UserFactorFading']

@@ -1,32 +1,32 @@
 import numpy as np
 
 class BaseForgetting:
-    def initialize(self):
-        """Initialize the forgetting technique with the parameters.
+    def reset_forgetting(self):
+        """Reset the model and get ready to use.
         """
 
-        self.rating_matrix = np.zeros([[]])
-        self.n_items = 0
-        self.n_users = 0
+    def register_user(self, user):
+        """Add a new user to the model.
 
-    def register_user(self):
-        """Add a new user to the matrix.
+        Args:
+            user (User): User object. 
         """
-        self.rating_matrix = np.vstack((self.rating_matrix, np.zeros(self.n_items)))
-        self.n_users += 1
+        return
 
-    def register_item(self):
-        """Add a new item to the matrix.
+    def register_item(self, item):
+        """Add a new item to the model.
+
+        Args:
+            item (Item): Item object.
         """
-        self.rating_matrix = np.hstack((self.rating_matrix, np.zeros(self.n_users)))
-        self.n_items += 1
+        return
 
     def update(self, user, item, rating):
-        """Apply a forgetting operation in the item vector.
+        """Update the model using a new rating.
 
         Args:
             user (int): User index.
-            item (int): Item indexself.
+            item (int): Item index.
             rating (int): Rating given by user to the item.
         """
         return
@@ -39,6 +39,7 @@ class BaseForgetting:
             item (int): Item index.
         """
         return item_vec
+
     def user_forgetting(self, user_vec, user):
         """Apply a forgetting operation in the user vector.
 
