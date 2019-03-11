@@ -9,7 +9,7 @@ class BaseForgetting:
         """Add a new user to the model.
 
         Args:
-            user (User): User object. 
+            user (User): User object.
         """
         return
 
@@ -31,20 +31,22 @@ class BaseForgetting:
         """
         return
 
-    def item_forgetting(self, item_vec, item):
+    def item_forgetting(self, item_vec, item, last_item_vec):
         """Apply a forgetting operation in the item vector.
 
         Args:
             item_vec (numpy.array): Latent factor vector with item attributes updated.
             item (int): Item index.
+            last_item_vec (numpy.array): Latent factor vector with item attributes not yet updated.
         """
         return item_vec
 
-    def user_forgetting(self, user_vec, user):
+    def user_forgetting(self, user_vec, user, last_user_vec):
         """Apply a forgetting operation in the user vector.
 
         Args:
             user_vec (numpy.array): Latent factor vector with user attributes updated.
             user (int): User index.
+            last_user_vec (numpy.array): Latent factor vector with user attributes not yet updated.
         """
         return user_vec

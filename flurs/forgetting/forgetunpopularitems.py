@@ -17,10 +17,7 @@ class ForgetUnpopularItems(BaseForgetting):
         self.items[item] += 1
         return
 
-    def item_forgetting(self, item_vec, item):
+    def item_forgetting(self, item_vec, item, last_item_vec):
         coef = -(self.alpha ** -self.items[item]) + 1
         next_i_vec = item_vec * coef
         return next_i_vec
-
-    def user_forgetting(self, user_vec, user):
-        return user_vec

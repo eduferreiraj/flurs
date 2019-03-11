@@ -1,5 +1,7 @@
-from .noforgetting import NoForgetting
 from .forgetunpopularitems import ForgetUnpopularItems
+from .noforgetting import NoForgetting
+from .sduserfactorfading import SDUserFactorFading
 from .userfactorfading import UserFactorFading
 
-__all__ = ['NoForgetting', 'ForgetUnpopularItems', 'UserFactorFading']
+
+__all__ = ['ForgetUnpopularItems', 'NoForgetting', 'SDUserFactorFading', 'UserFactorFading']

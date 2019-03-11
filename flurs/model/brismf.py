@@ -49,8 +49,8 @@ class BRISMF(BaseEstimator):
         next_i_vec = i_vec - self.learn_rate * grad
 
         self.forgetting.update(ua, ia, value)
-        next_i_vec = self.forgetting.item_forgetting(next_i_vec, ia)
-        next_u_vec = self.forgetting.user_forgetting(next_u_vec, ua)
+        next_i_vec = self.forgetting.item_forgetting(next_i_vec, ia, i_vec)
+        next_u_vec = self.forgetting.user_forgetting(next_u_vec, ua, u_vec)
 
         next_u_vec[0] = 1
         next_i_vec[1] = 1
