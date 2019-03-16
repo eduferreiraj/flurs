@@ -9,7 +9,6 @@ class ForgetUnpopularItems(BaseForgetting):
     def reset_forgetting(self):
         self.items = np.zeros(0)
 
-
     def register_item(self, item):
         self.items = np.hstack((self.items, 0))
 

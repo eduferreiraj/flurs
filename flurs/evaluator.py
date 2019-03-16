@@ -83,9 +83,8 @@ class Evaluator(object):
 
             # item i interacted by user u must be in the recommendation candidate
             # even if it is a new item
-            unobserved.add(e.item.index)
-
             candidates = np.asarray(list(unobserved))
+            candidates = np.concatenate((np.random.choice(candidates, 1000), [e.item.index]))
 
             # make top-{at} recommendation for the 1001 items
             start = time.clock()

@@ -2,7 +2,6 @@ from sklearn.base import BaseEstimator
 from ..forgetting import NoForgetting
 import numpy as np
 
-
 class MatrixFactorization(BaseEstimator):
 
     """Incremental Matrix Factorization
@@ -36,13 +35,15 @@ class MatrixFactorization(BaseEstimator):
         u_vec = self.users[ua]['vec']
         i_vec = self.Q[ia]
 
-        err = value - np.inner(u_vec, i_vec)
+        predicted = np.inner(u_vec, i_vec)
+        err = value - predicted
 
-        grad = -2. * (err * i_vec - self.l2_reg_u * u_vec)
-        next_u_vec = u_vec - self.learn_rate * grad
 
-        grad = -2. * (err * u_vec - self.l2_reg_i * i_vec)
-        next_i_vec = i_vec - self.learn_rate * grad
+        grad = (err * i_vec - self.l2_reg_u * u_vec)
+        next_u_vec = u_vec + self.learn_rate * grad
+
+        grad = (err * u_vec - self.l2_reg_i * i_vec)
+        next_i_vec = i_vec + self.learn_rate * grad
 
         self.forgetting.update(ua, ia, value)
         next_i_vec = self.forgetting.item_forgetting(next_i_vec, ia, i_vec)
