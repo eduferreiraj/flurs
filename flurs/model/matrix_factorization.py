@@ -35,9 +35,8 @@ class MatrixFactorization(BaseEstimator):
         u_vec = self.users[ua]['vec']
         i_vec = self.Q[ia]
 
-        predicted = np.inner(u_vec, i_vec)
-        err = value - predicted
 
+        err = value - np.inner(u_vec, i_vec)
 
         grad = (err * i_vec - self.l2_reg_u * u_vec)
         next_u_vec = u_vec + self.learn_rate * grad
