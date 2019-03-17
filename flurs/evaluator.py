@@ -1,5 +1,5 @@
 from .base import FeatureRecommenderMixin
-
+from numba import njit, jit
 import time
 import numpy as np
 
@@ -62,7 +62,7 @@ class Evaluator(object):
         for e in test_events:
             e.user.known_item(e.item.index)
             self.rec.update(e)
-
+    @njit
     def evaluate(self, test_events):
         """Iterate recommend/update procedure and compute incremental recall.
 
@@ -149,7 +149,7 @@ class Evaluator(object):
             MPR = self.__batch_evaluate(test_events)
             if self.debug:
                 logger.debug('epoch %2d: MPR = %f' % (epoch + 1, MPR))
-
+    @jit
     def __batch_evaluate(self, test_events):
         """Evaluate the current model by using the given test events.
 
@@ -169,11 +169,14 @@ class Evaluator(object):
             unobserved = all_items
             if not self.repeat:
                 # make recommendation for all unobserved items
-                unobserved = set([item for item in all_items if item not in e.user.known_items])
-                # true item itself must be in the recommendation candidates
-                unobserved.add(e.item.index)
+                every_item = np.arange(list(unobserved)[-1] + 1)
+                index = np.ones(every_item.shape[0], dtype=bool)
+                index[e.user.known_items] = False
+                unobserved = np.intersect1d(list(unobserved), every_item[index])
+            np.random.shuffle(unobserved)
+            unobserved = unobserved[:1000]
+            candidates = np.append(unobserved, e.item.index)
 
-            candidates = np.asarray(list(unobserved))
             recos, scores = self.__recommend(e, candidates)
 
             pos = np.where(recos == e.item.index)[0][0]

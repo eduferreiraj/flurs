@@ -1,6 +1,7 @@
 from ..base import RecommenderMixin
 from ..model import MatrixFactorization
 from .. import logger
+from numba import jit
 
 import numpy as np
 
@@ -52,6 +53,7 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
     def update(self, e):
         self.update_model(e.user.index, e.item.index, e.value)
 
+    @jit
     def score(self, user, candidates):
         pred = np.dot(self.A[user.index],
                       self.B[candidates].T)

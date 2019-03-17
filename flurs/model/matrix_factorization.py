@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator
 from ..forgetting import NoForgetting
 import numpy as np
+from numba import jit
 
 class MatrixFactorization(BaseEstimator):
 
@@ -32,6 +33,7 @@ class MatrixFactorization(BaseEstimator):
         super(BaseEstimator, self).register_user(user)
         self.forgetting.register_user(user)
 
+    @jit
     def update_model(self, ua, ia, value):
         u_vec = self.A[ua]
         i_vec = self.B[ia]
