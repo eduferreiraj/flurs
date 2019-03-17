@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
         """Set/initialize parameters.
 
         Args:
