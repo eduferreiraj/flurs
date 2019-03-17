@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=True, maxlen=None, debug=False):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
         """Set/initialize parameters.
 
         Args:
@@ -47,7 +47,7 @@ class Evaluator(object):
         # make initial status for batch training
         for e in train_events:
             self.__validate(e)
-            self.rec.users[e.user.index]['known_items'].add(e.item.index)
+            e.user.known_item(e.item.index)
             self.item_buffer.append(e.item.index)
 
         # for batch evaluation, temporarily save new users info
@@ -60,7 +60,7 @@ class Evaluator(object):
         # batch test events are considered as a new observations;
         # the model is incrementally updated based on them before the incremental evaluation step
         for e in test_events:
-            self.rec.users[e.user.index]['known_items'].add(e.item.index)
+            e.user.known_item(e.item.index)
             self.rec.update(e)
 
     def evaluate(self, test_events):
@@ -76,15 +76,18 @@ class Evaluator(object):
         for i, e in enumerate(test_events):
             self.__validate(e)
 
-            # target items (all or unobserved depending on a detaset)
-            unobserved = set(self.item_buffer)
+            # target items (all or unobserved depending on a dataset)
+            items = set(self.item_buffer)
             if not self.repeat:
-                unobserved -= self.rec.users[e.user.index]['known_items']
+                unobserved = set([item for item in items if item not in e.user.known_items])
 
             # item i interacted by user u must be in the recommendation candidate
             # even if it is a new item
+
             candidates = np.asarray(list(unobserved))
-            candidates = np.concatenate((np.random.choice(candidates, 1000), [e.item.index]))
+            np.random.shuffle(candidates)
+            candidates = candidates[:1000]
+            candidates = np.concatenate((candidates, [e.item.index]))
 
             # make top-{at} recommendation for the 1001 items
             start = time.clock()
@@ -94,7 +97,7 @@ class Evaluator(object):
             rank = np.where(recos == e.item.index)[0][0]
 
             # Step 2: update the model with the observed event
-            self.rec.users[e.user.index]['known_items'].add(e.item.index)
+            e.user.known_item(e.item.index)
             start = time.clock()
             self.rec.update(e)
             update_time = (time.clock() - start)
@@ -140,7 +143,7 @@ class Evaluator(object):
 
             # train
             for e in train_events:
-                self.rec.update(e, batch_train=True)
+                self.rec.update(e)
 
             # test
             MPR = self.__batch_evaluate(test_events)
@@ -166,7 +169,7 @@ class Evaluator(object):
             unobserved = all_items
             if not self.repeat:
                 # make recommendation for all unobserved items
-                unobserved -= self.rec.users[e.user.index]['known_items']
+                unobserved = set([item for item in all_items if item not in e.user.known_items])
                 # true item itself must be in the recommendation candidates
                 unobserved.add(e.item.index)
 

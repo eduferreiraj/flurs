@@ -21,7 +21,8 @@ class MatrixFactorization(BaseEstimator):
         self.forgetting = forgetting
         self.forgetting.reset_forgetting()
 
-        self.Q = np.array([])
+        self.A = np.array([])
+        self.B = np.array([])
 
     def register_item(self, item):
         super(BaseEstimator, self).register_item(item)
@@ -32,9 +33,8 @@ class MatrixFactorization(BaseEstimator):
         self.forgetting.register_user(user)
 
     def update_model(self, ua, ia, value):
-        u_vec = self.users[ua]['vec']
-        i_vec = self.Q[ia]
-
+        u_vec = self.A[ua]
+        i_vec = self.B[ia]
 
         err = value - np.inner(u_vec, i_vec)
 
@@ -48,5 +48,5 @@ class MatrixFactorization(BaseEstimator):
         next_i_vec = self.forgetting.item_forgetting(next_i_vec, ia, i_vec)
         next_u_vec = self.forgetting.user_forgetting(next_u_vec, ua, u_vec)
 
-        self.users[ua]['vec'] = next_u_vec
-        self.Q[ia] = next_i_vec
+        self.A[ua] = next_u_vec
+        self.B[ia] = next_i_vec

@@ -25,32 +25,40 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
 
     def register_user(self, user):
         super(MFRecommender, self).register_user(user)
-        self.users[user.index]['vec'] = np.random.normal(0., 0.1, self.k)
+        sizeA = len(self.A)
+        if sizeA >= user.index:
+            return
+        elif sizeA == 0:
+            self.A = np.random.normal(0., 0.1, (user.index + 1, self.k))
+        else:
+            diff = user.index - sizeA
+            newMatrix = np.random.normal(0.,0.1,(diff, self.k))
+            self.A = np.concatenate((self.A, newMatrix))
+
 
     def register_item(self, item):
         super(MFRecommender, self).register_item(item)
-        i_vec = np.random.normal(0., 0.1, (1, self.k))
-        if self.Q.size == 0:
-            self.Q = i_vec
-        else:
-            self.Q = np.concatenate((self.Q, i_vec))
-
-    def update(self, e, batch_train=False):
-        # static baseline; w/o updating the model
-        if not batch_train and self.static:
+        sizeB = len(self.B)
+        if sizeB >= item.index:
             return
+        elif sizeB == 0:
+            self.B = np.random.normal(0., 0.1, (item.index + 1, self.k))
+        else:
+            diff = item.index - sizeB
+            newMatrix = np.random.normal(0.,0.1,(diff + 1, self.k))
+            self.B = np.concatenate((self.B, newMatrix))
 
-        if e.value != 1.:
-            logger.info('Incremental matrix factorization assumes implicit feedback recommendation, so the event value is automatically converted into 1.0')
-            e.value = 1.
 
+    def update(self, e):
         self.update_model(e.user.index, e.item.index, e.value)
 
     def score(self, user, candidates):
-        pred = np.dot(self.users[user.index]['vec'],
-                      self.Q[candidates, :].T)
+        pred = np.dot(self.A[user.index],
+                      self.B[candidates].T)
+        # print("Predicted: {}".format(pred))
         return np.abs(1. - pred.flatten())
 
     def recommend(self, user, candidates):
         scores = self.score(user, candidates)
+        # print("Scores: {}".format(scores))
         return self.scores2recos(scores, candidates)

@@ -7,6 +7,7 @@ class Base(object):
         self.index = index
         self.feature = feature
 
+
     def encode(self, dim=None,
                index=True, feature=True,
                vertical=False):
@@ -34,12 +35,18 @@ class Base(object):
 
 
 class User(Base):
+    def __init__(self, index):
+        super().__init__(index)
+        self.known_items = []
 
     def __str__(self):
         if len(self.feature) == 1 and self.feature[0] == 0.:
             return 'User(index={})'.format(self.index)
         else:
             return 'User(index={}, feature={})'.format(self.index, self.feature)
+    def known_item(self, item_index):
+        if item_index not in self.known_items:
+            self.known_items.append(item_index)
 
 
 class Item(Base):

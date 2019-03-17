@@ -15,13 +15,13 @@ class RecommenderMixin(object):
         self.n_user = 0
 
         # store user data
-        self.users = {}
+        self.known_users = {}
 
         # number of observed items
         self.n_item = 0
 
         # store item data
-        self.items = {}
+        self.known_items = {}
 
     def is_new_user(self, u):
         """Check if user is new.
@@ -33,7 +33,7 @@ class RecommenderMixin(object):
             boolean: Whether the user is new.
 
         """
-        return u not in self.users
+        return u >= len(self.A)
 
     def register(self, entity):
         t = type(entity)
@@ -49,7 +49,6 @@ class RecommenderMixin(object):
             user (User): User.
 
         """
-        self.users[user.index] = {'known_items': set()}
         self.n_user += 1
 
     def is_new_item(self, i):
@@ -62,7 +61,7 @@ class RecommenderMixin(object):
             boolean: Whether the item is new.
 
         """
-        return i not in self.items
+        return i >= len(self.B)
 
     def register_item(self, item):
         """For new items, append their information into the dictionaries.
@@ -71,7 +70,6 @@ class RecommenderMixin(object):
             item (Item): Item.
 
         """
-        self.items[item.index] = {}
         self.n_item += 1
 
     def update(self, e, batch_train):
@@ -126,9 +124,6 @@ class RecommenderMixin(object):
 
         """
         sorted_indices = np.argsort(scores)
-
-        if rev:
-            sorted_indices = sorted_indices[::-1]
 
         return candidates[sorted_indices], scores[sorted_indices]
 
