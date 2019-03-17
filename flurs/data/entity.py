@@ -36,10 +36,11 @@ class Base(object):
 
 class User(Base):
     def __init__(self, index):
-        super().__init__(index)
         self.known_items = []
+        self.index = index
+        self.feature=np.array([0.])
 
-    def __str__(self):
+    def __repr__(self):
         if len(self.feature) == 1 and self.feature[0] == 0.:
             return 'User(index={})'.format(self.index)
         else:
@@ -51,7 +52,7 @@ class User(Base):
 
 class Item(Base):
 
-    def __str__(self):
+    def __repr__(self):
         if len(self.feature) == 1 and self.feature[0] == 0.:
             return 'Item(index={})'.format(self.index)
         else:

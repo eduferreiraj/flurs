@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
         """Set/initialize parameters.
 
         Args:
@@ -136,22 +136,20 @@ class Evaluator(object):
             n_epoch (int): Number of epochs for the batch training.
 
         """
-        for epoch in range(max_n_epoch):
-            # SGD requires us to shuffle events in each iteration
-            # * if n_epoch == 1
-            #   => shuffle is not required because it is a deterministic training (i.e. matrix sketching)
-            if max_n_epoch != 1:
-                np.random.shuffle(train_events)
+        prev_err = np.inf
+        curr_err = 10e20
+        n_epoch = 0
+        while curr_err/prev_err < 0.999999 and n_epoch <= max_n_epoch:
+            n_epoch += 1
+            np.random.shuffle(train_events)
 
-            # train
             for e in train_events:
                 self.rec.update(e)
-
-            # test
-            MPR = self.__batch_evaluate(test_events)
+            prev_err = curr_err
+            curr_err = self.__batch_evaluate(test_events)
             if self.debug:
-                logger.debug('epoch %2d: MPR = %f' % (epoch + 1, MPR))
-    @jit
+                logger.debug('epoch: %2d, conv: %f' % (n_epoch, curr_err/prev_err))
+
     def __batch_evaluate(self, test_events):
         """Evaluate the current model by using the given test events.
 
@@ -162,26 +160,12 @@ class Evaluator(object):
             float: Mean Percentile Rank for the test set.
 
         """
-        percentiles = np.zeros(len(test_events))
-
-        all_items = set(self.item_buffer)
+        sum_err = 0
         for i, e in enumerate(test_events):
-
-            # check if the data allows users to interact the same items repeatedly
-            unobserved = all_items
-            if not self.repeat:
-                # make recommendation for all unobserved items
-                every_item = np.arange(list(unobserved)[-1] + 1)
-                index = np.ones(every_item.shape[0], dtype=bool)
-                index[e.user.known_items] = False
-                unobserved = np.intersect1d(list(unobserved), every_item[index])
-            np.random.shuffle(unobserved)
-            unobserved = unobserved[:1000]
-            candidates = np.append(unobserved, e.item.index)
-
-            recos, scores = self.__recommend(e, candidates)
-
-            pos = np.where(recos == e.item.index)[0][0]
-            percentiles[i] = pos / (len(recos) - 1) * 100
-
-        return np.mean(percentiles)
+            user = e.user
+            item = e.item
+            rating_prev = self.rec.score(user,[item.index])
+            rating = e.value
+            reg_term = self.rec.reg_term(user.index, item.index)
+            sum_err += (rating - rating_prev) ** 2 + reg_term
+        return sum_err

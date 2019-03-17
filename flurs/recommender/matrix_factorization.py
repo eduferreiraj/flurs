@@ -58,9 +58,12 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
         pred = np.dot(self.A[user.index],
                       self.B[candidates].T)
         # print("Predicted: {}".format(pred))
-        return np.abs(1. - pred.flatten())
+        return pred.flatten()
 
     def recommend(self, user, candidates):
         scores = self.score(user, candidates)
         # print("Scores: {}".format(scores))
         return self.scores2recos(scores, candidates)
+
+    def reg_term(self, user_id, item_id):
+        return self.l2_reg_u * (np.linalg.norm(self.A[user_id])**2 + np.linalg.norm(self.B[item_id])**2)
