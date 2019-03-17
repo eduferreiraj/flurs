@@ -1,5 +1,5 @@
 from .base import FeatureRecommenderMixin
-from numba import njit, jit
+from numba import jit
 import time
 import numpy as np
 
@@ -62,7 +62,21 @@ class Evaluator(object):
         for e in test_events:
             e.user.known_item(e.item.index)
             self.rec.update(e)
-    @njit
+    @jit
+    def get_candidates(self, e):
+        # check if the data allows users to interact the same items repeatedly
+        unobserved = list(set(self.item_buffer))
+        if not self.repeat:
+            # make recommendation for all unobserved items
+            every_item = np.arange(unobserved[-1] + 1)
+            index = np.ones(every_item.shape[0], dtype=bool)
+            index[e.user.known_items] = False
+            unobserved = np.intersect1d(unobserved, every_item[index])
+        np.random.shuffle(unobserved)
+        unobserved = unobserved[:1000]
+        candidates = np.append(unobserved, e.item.index)
+        return candidates
+
     def evaluate(self, test_events):
         """Iterate recommend/update procedure and compute incremental recall.
 
@@ -76,19 +90,7 @@ class Evaluator(object):
         for i, e in enumerate(test_events):
             self.__validate(e)
 
-            # target items (all or unobserved depending on a dataset)
-            items = set(self.item_buffer)
-            if not self.repeat:
-                unobserved = set([item for item in items if item not in e.user.known_items])
-
-            # item i interacted by user u must be in the recommendation candidate
-            # even if it is a new item
-
-            candidates = np.asarray(list(unobserved))
-            np.random.shuffle(candidates)
-            candidates = candidates[:1000]
-            candidates = np.concatenate((candidates, [e.item.index]))
-
+            candidates = self.get_candidates(e)
             # make top-{at} recommendation for the 1001 items
             start = time.clock()
             recos, scores = self.__recommend(e, candidates)
