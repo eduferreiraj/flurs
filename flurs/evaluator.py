@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
         """Set/initialize parameters.
 
         Args:
@@ -32,7 +32,7 @@ class Evaluator(object):
 
         self.debug = debug
 
-    def fit(self, train_events, test_events, n_epoch=1):
+    def fit(self, train_events, test_events, max_n_epoch=20):
         """Train a model using the first 30% positive events to avoid cold-start.
 
         Evaluation of this batch training is done by using the next 20% positive events.
@@ -55,7 +55,7 @@ class Evaluator(object):
             self.__validate(e)
             self.item_buffer.append(e.item.index)
 
-        self.__batch_update(train_events, test_events, n_epoch)
+        self.__batch_update(train_events, test_events, max_n_epoch)
 
         # batch test events are considered as a new observations;
         # the model is incrementally updated based on them before the incremental evaluation step
@@ -125,7 +125,7 @@ class Evaluator(object):
         if self.rec.is_new_item(e.item.index):
             self.rec.register_item(e.item)
 
-    def __batch_update(self, train_events, test_events, n_epoch):
+    def __batch_update(self, train_events, test_events, max_n_epoch):
         """Batch update called by the fitting method.
 
         Args:
@@ -134,11 +134,11 @@ class Evaluator(object):
             n_epoch (int): Number of epochs for the batch training.
 
         """
-        for epoch in range(n_epoch):
+        for epoch in range(max_n_epoch):
             # SGD requires us to shuffle events in each iteration
             # * if n_epoch == 1
             #   => shuffle is not required because it is a deterministic training (i.e. matrix sketching)
-            if n_epoch != 1:
+            if max_n_epoch != 1:
                 np.random.shuffle(train_events)
 
             # train
