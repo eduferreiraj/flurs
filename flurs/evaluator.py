@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
         """Set/initialize parameters.
 
         Args:
@@ -109,6 +109,19 @@ class Evaluator(object):
             # (top-1 score, where the correct item is ranked, rec time, update time)
             yield scores[0], rank, recommend_time, update_time
 
+    def recommend(self, test_events):
+        for i, e in enumerate(test_events):
+            self.__validate(e)
+
+            candidates = self.get_candidates(e)
+            # make top-{at} recommendation for the 1001 items
+            start = time.clock()
+            recos, scores = self.__recommend(e, candidates)
+            recommend_time = (time.clock() - start)
+
+            rank = np.where(recos == e.item.index)[0][0]
+            yield scores[0], rank, recommend_time
+
     def __recommend(self, e, candidates):
         if self.feature_rec:
             return self.rec.recommend(e.user, candidates, e.context)
@@ -137,18 +150,37 @@ class Evaluator(object):
 
         """
         prev_err = np.inf
-        curr_err = 10e20
-        n_epoch = 0
-        while curr_err/prev_err < 0.999999 and n_epoch <= max_n_epoch:
-            n_epoch += 1
-            np.random.shuffle(train_events)
+        curr_err = 100
+        n_epoch = 1
+        n_chunks = 20
+        # afraid_kid = AfraidKid(self.rec.learn_rate)
+        train_chunks = np.array_split(train_events, n_chunks)
+        convergence = np.inf
+        converged = False
+        convergence_rate = .00001
+        for chunk in train_chunks:
+            while not converged and n_epoch <= max_n_epoch:
+                np.random.shuffle(train_events)
 
-            for e in train_events:
-                self.rec.update(e)
-            prev_err = curr_err
-            curr_err = self.__batch_evaluate(test_events)
-            if self.debug:
-                logger.debug('epoch: %2d, conv: %f' % (n_epoch, curr_err/prev_err))
+                for e in chunk:
+                    self.rec.update(e)
+                prev_err = curr_err
+                curr_err = self.__batch_evaluate(test_events)
+                convergence = curr_err/prev_err - 1
+                # self.rec.learn_rate = afraid_kid.update_lr(prev_err - curr_err)
+                if self.debug:
+                    logger.debug('epoch: %2d, conv: %f, err: %d' %
+                        (n_epoch, convergence, curr_err))
+                n_epoch += 1
+                converged = convergence < convergence_rate and convergence > - convergence_rate
+                if convergence > 0 and convergence < 1:
+                    break
+            if converged or convergence > 0:
+                break
+        self.rec.learn_rate = self.rec.learn_rate * 10
+        self.rec.forgetting.mean()
+        logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
+
 
     def __batch_evaluate(self, test_events):
         """Evaluate the current model by using the given test events.
@@ -164,7 +196,7 @@ class Evaluator(object):
         for i, e in enumerate(test_events):
             user = e.user
             item = e.item
-            rating_prev = self.rec.score(user,[item.index])
+            rating_prev = self.rec.score(user,[item.index])[0]
             rating = e.value
             reg_term = self.rec.reg_term(user.index, item.index)
             sum_err += (rating - rating_prev) ** 2 + reg_term

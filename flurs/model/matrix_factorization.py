@@ -38,7 +38,8 @@ class MatrixFactorization(BaseEstimator):
         u_vec = self.A[ua]
         i_vec = self.B[ia]
 
-        err = value - np.inner(u_vec, i_vec)
+        pred = np.inner(u_vec, i_vec)
+        err = value - pred
 
         grad = (err * i_vec - self.l2_reg_u * u_vec)
         next_u_vec = u_vec + self.learn_rate * grad
@@ -49,6 +50,10 @@ class MatrixFactorization(BaseEstimator):
         self.forgetting.update(ua, ia, value)
         next_i_vec = self.forgetting.item_forgetting(next_i_vec, ia, i_vec)
         next_u_vec = self.forgetting.user_forgetting(next_u_vec, ua, u_vec)
+
+        # if pred > np.inner(next_u_vec, next_i_vec):
+        #     print("P1:{1:.2f}, P2:{2:.2f}".format(value, pred, np.inner(next_u_vec, next_i_vec)))
+        # print("\nDifference:\n{}".format(next_u_vec - next_u_vec_t1))
 
         self.A[ua] = next_u_vec
         self.B[ia] = next_i_vec

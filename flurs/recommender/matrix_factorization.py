@@ -30,10 +30,10 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
         if sizeA >= user.index:
             return
         elif sizeA == 0:
-            self.A = np.random.normal(0., 0.1, (user.index + 1, self.k))
+            self.A = np.random.normal(0., 0.2, (user.index + 1, self.k))
         else:
             diff = user.index - sizeA
-            newMatrix = np.random.normal(0.,0.1,(diff, self.k))
+            newMatrix = np.random.normal(0.,0.2,(diff, self.k))
             self.A = np.concatenate((self.A, newMatrix))
 
 
@@ -43,10 +43,10 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
         if sizeB >= item.index:
             return
         elif sizeB == 0:
-            self.B = np.random.normal(0., 0.1, (item.index + 1, self.k))
+            self.B = np.random.normal(0., 0.2, (item.index + 1, self.k))
         else:
             diff = item.index - sizeB
-            newMatrix = np.random.normal(0.,0.1,(diff + 1, self.k))
+            newMatrix = np.random.normal(0.,0.2,(diff + 1, self.k))
             self.B = np.concatenate((self.B, newMatrix))
 
 
@@ -64,6 +64,6 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
         scores = self.score(user, candidates)
         # print("Scores: {}".format(scores))
         return self.scores2recos(scores, candidates)
-
+    @jit
     def reg_term(self, user_id, item_id):
-        return self.l2_reg_u * (np.linalg.norm(self.A[user_id])**2 + np.linalg.norm(self.B[item_id])**2)
+        return self.l2_reg_u * (np.linalg.norm(self.A[user_id], 1)**2 + np.linalg.norm(self.B[item_id], 1)**2)
