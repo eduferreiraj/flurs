@@ -50,3 +50,6 @@ class BaseForgetting:
             last_user_vec (numpy.array): Latent factor vector with user attributes not yet updated.
         """
         return user_vec
+
+    def mean(self):
+        return 
