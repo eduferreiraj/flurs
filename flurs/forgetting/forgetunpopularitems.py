@@ -13,12 +13,12 @@ class ForgetUnpopularItems(BaseForgetting):
     @jit
     def register_item(self, item):
         size_items = len(self.item_ratings)
-        if size_items >= item.index:
+        if size_items > item.index:
             return
         elif size_items == 0:
             self.item_ratings = np.zeros((item.index + 1, 1))
         else:
-            diff = item.index - size_items
+            diff = item.index - (size_items - 1)
             newMatrix = np.zeros((diff + 1, 1))
             self.item_ratings = np.concatenate((self.item_ratings, newMatrix))
 

@@ -10,7 +10,7 @@ class SDUserFactorFading(BaseForgetting):
     def user_forgetting(self, user_vec, user, last_user_vec):
         diff = user_vec - last_user_vec
         # print("Diferenca: {}".format(diff))
-        stability = self.alpha ** (- np.std(diff))
+        stability = self.alpha ** (- np.sqrt(np.std(diff)))
         # print("Norma: {}, Coef: {}, Std: {}".format(np.linalg.norm(diff), stability, np.std(diff)))
         self.coefs.append(stability)
         return user_vec * stability

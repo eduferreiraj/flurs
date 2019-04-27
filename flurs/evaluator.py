@@ -47,7 +47,6 @@ class Evaluator(object):
         # make initial status for batch training
         for e in train_events:
             self.__validate(e)
-            e.user.known_item(e.item.index)
             self.item_buffer.append(e.item.index)
 
         # for batch evaluation, temporarily save new users info
@@ -60,15 +59,14 @@ class Evaluator(object):
         # batch test events are considered as a new observations;
         # the model is incrementally updated based on them before the incremental evaluation step
         for e in test_events:
-            e.user.known_item(e.item.index)
             self.rec.update(e)
-    @jit
+    # @jit
     def get_candidates(self, e):
         # check if the data allows users to interact the same items repeatedly
         unobserved = list(set(self.item_buffer))
         if not self.repeat:
             # make recommendation for all unobserved items
-            every_item = np.arange(unobserved[-1] + 1)
+            every_item = np.arange(self.rec.B.shape[0])
             index = np.ones(every_item.shape[0], dtype=bool)
             index[e.user.known_items] = False
             unobserved = np.intersect1d(unobserved, every_item[index])
@@ -129,6 +127,7 @@ class Evaluator(object):
             return self.rec.recommend(e.user, candidates)
 
     def __validate(self, e):
+        e.user.known_item(e.item.index)
         self.__validate_user(e)
         self.__validate_item(e)
 
@@ -194,6 +193,7 @@ class Evaluator(object):
         """
         sum_err = 0
         for i, e in enumerate(test_events):
+            self.__validate(e)
             user = e.user
             item = e.item
             rating_prev = self.rec.score(user,[item.index])[0]

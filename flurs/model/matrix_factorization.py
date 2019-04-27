@@ -33,7 +33,7 @@ class MatrixFactorization(BaseEstimator):
         super(BaseEstimator, self).register_user(user)
         self.forgetting.register_user(user)
 
-    @jit
+    # @jit
     def update_model(self, ua, ia, value):
         u_vec = self.A[ua]
         i_vec = self.B[ia]
