@@ -51,5 +51,13 @@ class BaseForgetting:
         """
         return user_vec
 
+    def __repr__(self):
+        if self.alpha:
+            name = "{}(alpha={})".format(self.__class__.__name__, self.alpha)
+        else:
+            name = "{}()".format(self.__class__.__name__)
+        return name
+
+
     def mean(self):
-        return 
+        return
