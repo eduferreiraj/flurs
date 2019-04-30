@@ -41,7 +41,7 @@ class Evaluator(object):
         Args:
             train_events (list of Event): Positive training events (0-30%).
             test_events (list of Event): Test events (30-50%).
-            n_epoch (int): Number of epochs for the batch training.
+            max_n_epoch (int): Maximum number of epochs for the batch training.
 
         """
         # make initial status for batch training
@@ -60,16 +60,31 @@ class Evaluator(object):
         # the model is incrementally updated based on them before the incremental evaluation step
         for e in test_events:
             self.rec.update(e)
-    # @jit
+
     def get_candidates(self, e):
-        # check if the data allows users to interact the same items repeatedly
+        """Get a list of 1000 unknown items to the user.
+
+        Args:
+            e (Event): Event with the user .
+
+        Returns:
+            list of candidates: Integer
+
+        """
+        # select all known items in the model
         unobserved = list(set(self.item_buffer))
-        if not self.repeat:
-            # make recommendation for all unobserved items
-            every_item = np.arange(self.rec.B.shape[0])
-            index = np.ones(every_item.shape[0], dtype=bool)
-            index[e.user.known_items] = False
-            unobserved = np.intersect1d(unobserved, every_item[index])
+        every_item = np.arange(self.rec.B.shape[0])
+
+        # create a boolean vector
+        index = np.ones(every_item.shape[0], dtype=bool)
+
+        # set user known items to false
+        index[e.user.known_items] = False
+
+        # intersect between users unknown items and all items in the model
+        unobserved = np.intersect1d(unobserved, every_item[index])
+
+        # shuffle and select 1000
         np.random.shuffle(unobserved)
         unobserved = unobserved[:1000]
         candidates = np.append(unobserved, e.item.index)
@@ -82,19 +97,11 @@ class Evaluator(object):
             test_events (list of Event): Positive test events.
 
         Returns:
-            list of tuples: (rank, recommend time, update time)
+            list of tuples: (score recall@1, rank, recommend time, update time)
 
         """
         for i, e in enumerate(test_events):
-            self.__validate(e)
-
-            candidates = self.get_candidates(e)
-            # make top-{at} recommendation for the 1001 items
-            start = time.clock()
-            recos, scores = self.__recommend(e, candidates)
-            recommend_time = (time.clock() - start)
-
-            rank = np.where(recos == e.item.index)[0][0]
+            scores, rank, recommend_time = self.recommend_event(e)
 
             # Step 2: update the model with the observed event
             e.user.known_item(e.item.index)
@@ -108,17 +115,31 @@ class Evaluator(object):
             yield scores[0], rank, recommend_time, update_time
 
     def recommend(self, test_events):
+        """Just recommend, without updating the model.
+
+        Args:
+            test_events (list of Event): Positive test events.
+
+        Returns:
+            list of tuples: (score recall{at}1, rank, recommend time)
+
+        """
         for i, e in enumerate(test_events):
-            self.__validate(e)
-
-            candidates = self.get_candidates(e)
-            # make top-{at} recommendation for the 1001 items
-            start = time.clock()
-            recos, scores = self.__recommend(e, candidates)
-            recommend_time = (time.clock() - start)
-
-            rank = np.where(recos == e.item.index)[0][0]
+            scores, rank, recommend_time = self.recommend_event(e)
             yield scores[0], rank, recommend_time
+
+    def recommend_event(self, e):
+        self.__validate(e)
+
+        candidates = self.get_candidates(e)
+        # make top-{at} recommendation for the 1001 items
+        start = time.clock()
+        recos, scores = self.__recommend(e, candidates)
+        recommend_time = (time.clock() - start)
+
+        rank = np.where(recos == e.item.index)[0][0]
+        return scores, rank, recommend_time
+
 
     def __recommend(self, e, candidates):
         if self.feature_rec:
@@ -132,12 +153,10 @@ class Evaluator(object):
         self.__validate_item(e)
 
     def __validate_user(self, e):
-        if self.rec.is_new_user(e.user.index):
-            self.rec.register_user(e.user)
+        self.rec.register_user(e.user)
 
     def __validate_item(self, e):
-        if self.rec.is_new_item(e.item.index):
-            self.rec.register_item(e.item)
+        self.rec.register_item(e.item)
 
     def __batch_update(self, train_events, test_events, max_n_epoch):
         """Batch update called by the fitting method.
@@ -166,17 +185,16 @@ class Evaluator(object):
                 prev_err = curr_err
                 curr_err = self.__batch_evaluate(test_events)
                 convergence = curr_err/prev_err - 1
-                # self.rec.learn_rate = afraid_kid.update_lr(prev_err - curr_err)
                 if self.debug:
                     logger.debug('epoch: %2d, conv: %f, err: %d' %
                         (n_epoch, convergence, curr_err))
                 n_epoch += 1
                 converged = convergence < convergence_rate and convergence > - convergence_rate
+                # error rate start to increase
                 if convergence > 0 and convergence < 1:
                     break
             if converged or convergence > 0:
                 break
-        self.rec.learn_rate = self.rec.learn_rate * 10
         self.rec.forgetting.mean()
         logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
 
