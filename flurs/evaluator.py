@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
         """Set/initialize parameters.
 
         Args:
@@ -112,7 +112,7 @@ class Evaluator(object):
             self.item_buffer.append(e.item.index)
 
             # (top-1 score, where the correct item is ranked, rec time, update time)
-            yield scores[0], rank, recommend_time, update_time
+            yield scores[0], rank, recommend_time, update_time, e.user.index
 
     def recommend(self, test_events):
         """Just recommend, without updating the model.
@@ -171,30 +171,26 @@ class Evaluator(object):
         curr_err = 100
         n_epoch = 1
         n_chunks = 20
-        # afraid_kid = AfraidKid(self.rec.learn_rate)
+        np.random.shuffle(train_events)
         train_chunks = np.array_split(train_events, n_chunks)
         convergence = np.inf
         converged = False
-        convergence_rate = .00001
-        for chunk in train_chunks:
-            while not converged and n_epoch <= max_n_epoch:
-                np.random.shuffle(train_events)
-
+        convergence_criteria = .00001
+        while not converged and n_epoch <= max_n_epoch:
+            for chunk in train_chunks:
                 for e in chunk:
                     self.rec.update(e)
                 prev_err = curr_err
                 curr_err = self.__batch_evaluate(test_events)
                 convergence = curr_err/prev_err - 1
-                if self.debug:
-                    logger.debug('epoch: %2d, conv: %f, err: %d' %
-                        (n_epoch, convergence, curr_err))
-                n_epoch += 1
-                converged = convergence < convergence_rate and convergence > - convergence_rate
-                # error rate start to increase
-                if convergence > 0 and convergence < 1:
+                # convergence rate between (- convergence_criteria, convergence_criteria)
+                converged = convergence < convergence_criteria and convergence > - convergence_criteria
+                if converged:
                     break
-            if converged or convergence > 0:
-                break
+            if self.debug:
+                logger.debug('epoch: %2d, conv: %f, err: %d' %
+                    (n_epoch, convergence, curr_err))
+            n_epoch += 1
         self.rec.forgetting.mean()
         logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
 
