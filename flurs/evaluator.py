@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=True):
+    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
         """Set/initialize parameters.
 
         Args:
@@ -177,6 +177,7 @@ class Evaluator(object):
         converged = False
         convergence_criteria = .00001
         while not converged and n_epoch <= max_n_epoch:
+            np.random.shuffle(train_chunks)
             for chunk in train_chunks:
                 for e in chunk:
                     self.rec.update(e)
