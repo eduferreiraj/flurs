@@ -47,12 +47,10 @@ class Evaluator(object):
         # make initial status for batch training
         for e in train_events:
             self.__validate(e)
-            self.item_buffer.append(e.item.index)
 
         # for batch evaluation, temporarily save new users info
         for e in test_events:
             self.__validate(e)
-            self.item_buffer.append(e.item.index)
 
         self.__batch_update(train_events, test_events, max_n_epoch)
 
@@ -76,7 +74,7 @@ class Evaluator(object):
         every_item = np.arange(self.rec.B.shape[0])
 
         # create a boolean vector
-        index = np.ones(every_item.shape[0], dtype=bool)
+        index = np.ones(self.rec.B.shape[0], dtype=bool)
 
         # set user known items to false
         index[e.user.known_items] = False
@@ -104,12 +102,10 @@ class Evaluator(object):
             scores, rank, recommend_time = self.recommend_event(e)
 
             # Step 2: update the model with the observed event
-            e.user.known_item(e.item.index)
+            self.__validate(e)
             start = time.clock()
             self.rec.update(e)
             update_time = (time.clock() - start)
-
-            self.item_buffer.append(e.item.index)
 
             # (top-1 score, where the correct item is ranked, rec time, update time)
             yield scores[0], rank, recommend_time, update_time, e.user.index
@@ -149,13 +145,8 @@ class Evaluator(object):
 
     def __validate(self, e):
         e.user.known_item(e.item.index)
-        self.__validate_user(e)
-        self.__validate_item(e)
-
-    def __validate_user(self, e):
+        self.item_buffer.append(e.item.index)
         self.rec.register_user(e.user)
-
-    def __validate_item(self, e):
         self.rec.register_item(e.item)
 
     def __batch_update(self, train_events, test_events, max_n_epoch):
