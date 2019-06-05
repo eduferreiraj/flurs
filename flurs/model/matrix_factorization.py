@@ -52,6 +52,7 @@ class MatrixFactorization(BaseEstimator):
         grad = (err * i_vec - self.l2_reg_u * u_vec)
         next_u_vec = u_vec + self.learn_rate * grad
 
+
         grad = (err * u_vec - self.l2_reg_i * i_vec)
         next_i_vec = i_vec + self.learn_rate * grad
 
@@ -62,3 +63,8 @@ class MatrixFactorization(BaseEstimator):
 
         self.A[ua] = next_u_vec
         self.B[ia] = next_i_vec
+
+        if not self.train_observers == []:
+            u_diff = u_vec - next_u_vec
+            for observer in self.train_observers:
+                observer.profile_difference(u_diff)
