@@ -1,8 +1,7 @@
 from ..base import RecommenderMixin
 from ..model import MatrixFactorization
-from .. import logger
+from ..forgetting import NoForgetting
 from numba import jit
-
 import numpy as np
 
 
@@ -18,8 +17,9 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
       In *Proc. of UMAP 2014*, pp. 459-470, July 2014.
     """
 
+
     def initialize(self, static=False):
-        super(MFRecommender, self).initialize()
+        super(MatrixFactorization, self).initialize()
         self.static = static
 
     def register_user(self, user):
@@ -39,6 +39,7 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
             diff = user.index - (sizeA - 1)
             newMatrix = np.random.normal(0.,0.2,(diff, self.k))
             self.A = np.concatenate((self.A, newMatrix))
+            self.logger.debug("Added {} lines to A. {}".format(diff+1, self.A.shape))
 
     def register_item(self, item):
         """Add matrix space to handle the new item if needed.
@@ -57,6 +58,7 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
             diff = item.index - (sizeB - 1)
             newMatrix = np.random.normal(0.,0.2,(diff + 1, self.k))
             self.B = np.concatenate((self.B, newMatrix))
+            self.logger.debug("Added {} lines to B. {}".format(diff+1, self.B.shape))
 
     def update(self, e):
         """Update in the model with the new event.
@@ -65,7 +67,7 @@ class MFRecommender(MatrixFactorization, RecommenderMixin):
             e (Event): New event.
 
         """
-        self.update_model(e.user.index, e.item.index, e.value)
+        self.update_model(e.user.index, e.item.index, e.rating)
 
     def score(self, user, candidates):
         """Multiply both user and all cadidates lines to get the user regression for each item.

@@ -1,5 +1,5 @@
 import numpy as np
-
+import logging
 
 class Base(object):
 
@@ -39,6 +39,7 @@ class User(Base):
         self.known_items = []
         self.index = index
         self.feature=np.array([0.])
+        self.logger = logging.getLogger("experimenter.user")
 
     def __repr__(self):
         if len(self.feature) == 1 and self.feature[0] == 0.:
@@ -47,6 +48,7 @@ class User(Base):
             return 'User(index={}, feature={})'.format(self.index, self.feature)
     def known_item(self, item_index):
         if item_index not in self.known_items:
+            self.logger.debug("User {} know Item {} now.".format(self.index, item_index))
             self.known_items.append(item_index)
 
 
@@ -61,10 +63,10 @@ class Item(Base):
 
 class Event(object):
 
-    def __init__(self, user, item, value=1., context=np.array([0.])):
+    def __init__(self, user, item, rating=1., context=np.array([0.])):
         self.user = user
         self.item = item
-        self.value = value
+        self.rating = rating
         self.context = context
 
     def encode(self, n_user=None, n_item=None,
@@ -85,6 +87,6 @@ class Event(object):
 
     def __str__(self):
         if len(self.context) == 1 and self.context[0] == 0.:
-            return 'Event(user={}, item={}, value={})'.format(self.user, self.item, self.value)
+            return 'Event(user={}, item={}, value={})'.format(self.user, self.item, self.rating)
         else:
-            return 'Event(user={}, item={}, value={}, context={})'.format(self.user, self.item, self.value, self.context)
+            return 'Event(user={}, item={}, value={}, context={})'.format(self.user, self.item, self.rating, self.context)

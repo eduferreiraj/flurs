@@ -58,6 +58,8 @@ class BaseForgetting:
             name = "{}()".format(self.__class__.__name__)
         return name
 
+    def parameters(self):
+        return ""
 
     def mean(self):
         return

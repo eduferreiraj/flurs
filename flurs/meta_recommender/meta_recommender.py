@@ -1,9 +1,7 @@
 class MetaRecommender:
-    def __init__(self):
-
     def initialize(self, recommender):
         self.recommender = recommender
-        self.recommender.new_observer(self)
+        self.recommender.register_observer(self)
 
 
     def profile_difference(self, diff):
@@ -13,4 +11,4 @@ class MetaRecommender:
         return
 
     def parameters(self):
-        return "None"
+        return ""

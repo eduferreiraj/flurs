@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 from collections import deque
-from . import logger
+import logging
 
 
 class Evaluator(object):
@@ -12,7 +12,7 @@ class Evaluator(object):
     """Base class for experimentation of the incremental models with positive-only feedback.
     """
 
-    def __init__(self, recommender, repeat=False, maxlen=None, debug=False):
+    def __init__(self, recommender, repeat=False, maxlen=None):
         """Set/initialize parameters.
 
         Args:
@@ -30,7 +30,8 @@ class Evaluator(object):
         # save items which are observed in most recent `maxlen` events
         self.item_buffer = deque(maxlen=maxlen)
 
-        self.debug = debug
+        # create log configuration
+        self.logger = logging.getLogger("experimenter.evaluator")
 
     def fit(self, train_events, test_events, max_n_epoch=20):
         """Train a model using the first 30% positive events to avoid cold-start.
@@ -44,6 +45,9 @@ class Evaluator(object):
             max_n_epoch (int): Maximum number of epochs for the batch training.
 
         """
+
+        self.logger.debug("Fit validation started..")
+
         # make initial status for batch training
         for e in train_events:
             self.__validate(e)
@@ -52,10 +56,14 @@ class Evaluator(object):
         for e in test_events:
             self.__validate(e)
 
+
+        self.logger.info("Batch training started..")
         self.__batch_update(train_events, test_events, max_n_epoch)
 
         # batch test events are considered as a new observations;
         # the model is incrementally updated based on them before the incremental evaluation step
+
+        self.logger.debug("Updating model with test instances..")
         for e in test_events:
             self.rec.update(e)
 
@@ -88,7 +96,7 @@ class Evaluator(object):
         candidates = np.append(unobserved, e.item.index)
         return candidates
 
-    def evaluate(self, test_events):
+    def evaluate(self, prequential_events):
         """Iterate recommend/update procedure and compute incremental recall.
 
         Args:
@@ -98,14 +106,17 @@ class Evaluator(object):
             list of tuples: (score recall@1, rank, recommend time, update time)
 
         """
-        for i, e in enumerate(test_events):
+        self.logger.debug("------------------------------")
+        self.logger.info("Prequential evaluation started...")
+        self.logger.debug("------------------------------")
+        for e in prequential_events:
+            self.__validate(e)
             scores, rank, recommend_time = self.recommend_event(e)
 
             # Step 2: update the model with the observed event
-            self.__validate(e)
-            start = time.clock()
+            start = time.process_time()
             self.rec.update(e)
-            update_time = (time.clock() - start)
+            update_time = (time.process_time() - start)
 
             # (top-1 score, where the correct item is ranked, rec time, update time)
             yield scores[0], rank, recommend_time, update_time, e.user.index
@@ -125,13 +136,12 @@ class Evaluator(object):
             yield scores[0], rank, recommend_time
 
     def recommend_event(self, e):
-        self.__validate(e)
 
         candidates = self.get_candidates(e)
         # make top-{at} recommendation for the 1001 items
-        start = time.clock()
+        start = time.process_time()
         recos, scores = self.__recommend(e, candidates)
-        recommend_time = (time.clock() - start)
+        recommend_time = (time.process_time() - start)
 
         rank = np.where(recos == e.item.index)[0][0]
         return scores, rank, recommend_time
@@ -144,6 +154,8 @@ class Evaluator(object):
             return self.rec.recommend(e.user, candidates)
 
     def __validate(self, e):
+        self.logger.debug("Validating Event(U: {}, I: {}, R: {}). [A={},B={}]".format(e.user.index, e.item.index, e.rating, self.rec.A.shape, self.rec.B.shape))
+
         e.user.known_item(e.item.index)
         self.item_buffer.append(e.item.index)
         self.rec.register_user(e.user)
@@ -179,12 +191,9 @@ class Evaluator(object):
                 converged = convergence < convergence_criteria and convergence > - convergence_criteria
                 if converged:
                     break
-            if self.debug:
-                logger.debug('epoch: %2d, conv: %f, err: %d' %
-                    (n_epoch, convergence, curr_err))
             n_epoch += 1
         self.rec.forgetting.mean()
-        logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
+        self.logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
 
 
     def __batch_evaluate(self, test_events):
@@ -199,11 +208,10 @@ class Evaluator(object):
         """
         sum_err = 0
         for i, e in enumerate(test_events):
-            self.__validate(e)
             user = e.user
             item = e.item
             rating_prev = self.rec.score(user,[item.index])[0]
-            rating = e.value
+            rating = e.rating
             reg_term = self.rec.reg_term(user.index, item.index)
             sum_err += (rating - rating_prev) ** 2 + reg_term
         return sum_err

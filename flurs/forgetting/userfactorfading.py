@@ -8,3 +8,6 @@ class UserFactorFading(BaseForgetting):
     @jit
     def user_forgetting(self, user_vec, user, last_user_vec):
         return user_vec * self.alpha
+
+    def parameters(self):
+        return "Alpha:{}".format(self.alpha)

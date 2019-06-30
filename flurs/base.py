@@ -1,14 +1,14 @@
 from .data.entity import User, Item
 
 import numpy as np
+import logging
 
 
 class RecommenderMixin(object):
-
     """Mixin injected into a model to make it a recommender.
     """
 
-    def initialize(self, *args):
+    def initialize(self):
         """Initialize a recommender by resetting stored users and items.
         """
         # number of observed users
@@ -23,8 +23,8 @@ class RecommenderMixin(object):
         # store item data
         self.known_items = {}
 
-        # store train observers
-        self.train_observers = []
+        # create log configuration
+        self.logger = logging.getLogger("experimenter.recommender")
 
     def is_new_user(self, u):
         """Check if user is new.
@@ -52,8 +52,8 @@ class RecommenderMixin(object):
             user (User): User.
 
         """
-        for observer in train_observers:
-            observer.register_user(user)
+        if self.observer:
+            self.observer.register_user(user)
         self.n_user += 1
 
     def is_new_item(self, i):
@@ -132,6 +132,16 @@ class RecommenderMixin(object):
 
         return candidates[sorted_indices], scores[sorted_indices]
 
+    def register_observer(self, observer):
+        """Register a new observer for the user profile estability in the trainning process.
+
+        Args:
+            observer (Object): Object with a profile_difference(numpy array) method implemented.
+        """
+        self.logger.debug("Observer registred: {}".format(observer))
+        self.observer = observer
+
+
 
 class FeatureRecommenderMixin(RecommenderMixin):
 
@@ -168,11 +178,3 @@ class FeatureRecommenderMixin(RecommenderMixin):
 
         """
         return
-
-    def new_observer(self, observer):
-        """Register a new observer for the user profile estability in the trainning process.
-
-        Args:
-            observer (Object): Object with a profile_difference(numpy array) method implemented.
-        """
-        self.train_observers.append(observer)
