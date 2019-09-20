@@ -1,25 +1,25 @@
 from ..base import RecommenderMixin
-from ..model import BRISMF
+from ..model import NormalizedMF
 from ..forgetting import NoForgetting
 from numba import jit
 import numpy as np
 
 
-class BRISMFRecommender(BRISMF, RecommenderMixin):
+class NMFRecommender(NormalizedMF, RecommenderMixin):
 
-    """Biased Regularized Incremental Simultaneous Matrix Factorization
+    """Incremental Matrix Factorization (MF) recommender
 
     References
     ----------
-    - G. Takács et al.
-        "Scalable collaborative filtering approaches for large recommender systems."
-        J. Mach. Learn. Res. 10, 623–656 (2009)
 
+    - J. Vinagre et al.
+      `Fast Incremental Matrix Factorization for Recommendation with Positive-only Feedback <http://link.springer.com/chapter/10.1007/978-3-319-08786-3_41>`_.
+      In *Proc. of UMAP 2014*, pp. 459-470, July 2014.
     """
 
 
     def initialize(self, static=False):
-        super(BRISMF, self).initialize()
+        super(NMFRecommender, self).initialize()
         self.static = static
 
     def register_user(self, user):
@@ -29,7 +29,7 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
             user (integer): User ID.
 
         """
-        super(BRISMFRecommender, self).register_user(user)
+        super(NMFRecommender, self).register_user(user)
         sizeA = len(self.A)
         if sizeA > user.index:
             return
@@ -40,7 +40,6 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
             newMatrix = np.random.normal(0.,0.2,(diff, self.k))
             self.A = np.concatenate((self.A, newMatrix))
             self.logger.debug("Added {} lines to A. {}".format(diff+1, self.A.shape))
-        self.A.T[0] = 1.
 
     def register_item(self, item):
         """Add matrix space to handle the new item if needed.
@@ -49,7 +48,7 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
             item (integer): Item ID.
 
         """
-        super(BRISMFRecommender, self).register_item(item)
+        super(NMFRecommender, self).register_item(item)
         sizeB = len(self.B)
         if sizeB > item.index:
             return
@@ -60,7 +59,6 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
             newMatrix = np.random.normal(0.,0.2,(diff + 1, self.k))
             self.B = np.concatenate((self.B, newMatrix))
             self.logger.debug("Added {} lines to B. {}".format(diff+1, self.B.shape))
-        self.B.T[1] = 1.
 
     def update(self, e):
         """Update in the model with the new event.
@@ -110,4 +108,4 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
             integer: Value from lambda times the sum of both norms squared
 
         """
-        return self.l2_reg_u * (np.linalg.norm(self.A[user_id], 1)**2 + np.linalg.norm(self.B[item_id], 1)**2)
+        return self.l2_reg * (np.linalg.norm(self.A[user_id], 1)**2 + np.linalg.norm(self.B[item_id], 1)**2)

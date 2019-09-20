@@ -1,8 +1,7 @@
 from sklearn.base import BaseEstimator
 import numpy as np
-from numba import jit
 
-class MatrixFactorization(BaseEstimator):
+class NormalizedMF(BaseEstimator):
 
     """Incremental Matrix Factorization
 
@@ -12,13 +11,12 @@ class MatrixFactorization(BaseEstimator):
 
     """
 
-    def __init__(self, k, l2_reg, learn_rate, forgetting, rnd_seed):
+    def __init__(self, k, l2_reg, learn_rate, forgetting, norm_value = 1.):
         self.k = k
-        self.l2_reg_u = l2_reg
-        self.l2_reg_i = l2_reg
         self.learn_rate = learn_rate
         self.forgetting = forgetting
-        np.random.seed(rnd_seed)
+        self.norm_value = norm_value
+        self.l2_reg = l2_reg
         self.forgetting.reset_forgetting()
 
         self.A = np.array([])
@@ -55,10 +53,10 @@ class MatrixFactorization(BaseEstimator):
         pred = np.inner(u_vec, i_vec)
         err = rating - pred
 
-        i_grad = (err * u_vec - self.l2_reg_i * i_vec)
+        i_grad = err * u_vec
         next_i_vec = i_vec + self.learn_rate * i_grad
 
-        u_grad = (err * i_vec - self.l2_reg_u * u_vec)
+        u_grad = err * i_vec
         next_u_vec = u_vec + lrate * u_grad
 
         self.forgetting.update(ua, ia, rating)
@@ -72,3 +70,7 @@ class MatrixFactorization(BaseEstimator):
         if self.observer:
             self.observer.profile_difference(ua, u_grad)
             self.observer.update_model(ua, ia, rating)
+	
+        self.A[ua] = self.A[ua] * np.sqrt(self.norm_value / np.dot(self.A[ua], self.A[ua].T))
+        self.B[ia] = self.B[ia] * np.sqrt(self.norm_value / np.dot(self.B[ia], self.B[ia].T))
+	
