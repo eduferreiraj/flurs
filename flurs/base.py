@@ -128,7 +128,7 @@ class RecommenderMixin(object):
             (numpy array, numpy array) : (Sorted list of items, Sorted scores).
 
         """
-        sorted_indices = np.argsort(scores)
+        sorted_indices = np.argsort(scores)[::-1]
 
         return candidates[sorted_indices], scores[sorted_indices]
 

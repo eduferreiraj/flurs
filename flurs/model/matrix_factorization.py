@@ -12,7 +12,7 @@ class MatrixFactorization(BaseEstimator):
 
     """
 
-    def __init__(self, k, l2_reg, learn_rate, forgetting, rnd_seed):
+    def __init__(self, k, l2_reg, learn_rate, forgetting, rnd_seed=None):
         self.k = k
         self.l2_reg_u = l2_reg
         self.l2_reg_i = l2_reg

@@ -111,15 +111,16 @@ class Evaluator(object):
         self.logger.debug("------------------------------")
         for e in prequential_events:
             self.__validate(e)
-            scores, rank, recommend_time = self.recommend_event(e)
+            rating_pred, rank, recommend_time = self.recommend_event(e)
 
             # Step 2: update the model with the observed event
             start = time.process_time()
             self.rec.update(e)
             update_time = (time.process_time() - start)
 
+            # (where the correct item is ranked, correct rating, predicted rating, user index, rec time, update time)
             # (top-1 score, where the correct item is ranked, rec time, update time)
-            yield scores[0], rank, recommend_time, update_time, e.user.index
+            yield rank, e.rating, rating_pred, e.user.index, recommend_time, update_time
 
     def recommend(self, test_events):
         """Just recommend, without updating the model.
@@ -143,7 +144,7 @@ class Evaluator(object):
         recos, scores = self.__recommend(e, candidates)
         recommend_time = (time.process_time() - start)
         rank = np.where(recos == e.item.index)[0][0]
-        return scores, rank, recommend_time
+        return scores[rank], rank, recommend_time
 
 
     def __recommend(self, e, candidates):
