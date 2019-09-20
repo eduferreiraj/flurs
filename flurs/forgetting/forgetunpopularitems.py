@@ -5,8 +5,7 @@ from numba import jit
 class ForgetUnpopularItems(BaseForgetting):
     def __init__(self, alpha = 1.01):
         self.item_ratings = np.zeros(0)
-        # self.alpha = alpha
-        # self.coefs = []
+        self.alpha = alpha
 
     def reset_forgetting(self):
         self.item_ratings = np.zeros(0)
@@ -29,11 +28,8 @@ class ForgetUnpopularItems(BaseForgetting):
     def item_forgetting(self, item_vec, item, last_item_vec):
         coef = -(self.alpha ** -self.item_ratings[item]) + 1
         next_i_vec = item_vec * coef
-        # self.coefs.append(coef)
         return next_i_vec
 
-    # def mean(self):
-    #     return print("Alpha:{0} Mean:{1:2f}".format(self.alpha, np.mean(self.coefs)))
 
     def parameters(self):
-        return "Alpha:{}".format(self.alpha)
+        return [self.alpha]

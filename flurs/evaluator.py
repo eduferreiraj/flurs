@@ -142,7 +142,6 @@ class Evaluator(object):
         start = time.process_time()
         recos, scores = self.__recommend(e, candidates)
         recommend_time = (time.process_time() - start)
-
         rank = np.where(recos == e.item.index)[0][0]
         return scores, rank, recommend_time
 

@@ -21,14 +21,13 @@ class FloatLR(MetaRecommender):
             self.deviation[u_id] = FloatSTD(self.long_term[u_id])
             self.learn_vector[u_id] = self.recommender.learn_rate
 
-    def profile_difference(self, u_id, diff):
-        self.update_metric(u_id, diff.std())
+    def profile_difference(self, u_id, u_grad):
+        self.update_metric(u_id, u_grad.std())
         if self.deviation[u_id].get() == 0.0:
             return
         diff = self.short_term[u_id].get() - self.long_term[u_id].get()
         change = (diff/self.deviation[u_id].get())
         change_coef = self.alpha**change
-        # print("Diff: {} Change: {} Coef: {}".format(diff, change, change_coef))
         self.learn_vector[u_id] *= change_coef
 
     def update_metric(self, u_id, value):
@@ -43,6 +42,4 @@ class FloatLR(MetaRecommender):
         return [self.lambda_l, self.lambda_s, self.alpha]
 
     def learn_rate(self, user):
-        # if not self.learn_vector[user] == self.recommender.learn_rate:
-            # print("u_id: {} LR: {}".format(user, self.learn_vector[user]))
         return self.learn_vector[user]
