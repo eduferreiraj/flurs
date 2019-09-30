@@ -14,12 +14,13 @@ class BRISMF(BaseEstimator):
 
     """
 
-    def __init__(self, k, l2_reg, learn_rate, forgetting):
+    def __init__(self, k, l2_reg, learn_rate, forgetting, rnd_seed=None):
         self.k = k
         self.l2_reg_u = l2_reg
         self.l2_reg_i = l2_reg
         self.learn_rate = learn_rate
         self.forgetting = forgetting
+        np.random.seed(rnd_seed)
 
         self.forgetting.reset_forgetting()
 
