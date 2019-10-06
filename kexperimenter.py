@@ -28,7 +28,7 @@ class Recall:
 
 
 class Configuration:
-    def __init__(self, data_path, Recommender, k=40, l2_reg= .01, learn_rate=.02, forgetting=NoForgetting(alpha=None), meta=NoMeta(), seed=None):
+    def __init__(self, data_path, Recommender, k=80, l2_reg= .01, learn_rate=.02, forgetting=NoForgetting(alpha=None), meta=NoMeta(), seed=None):
         self.seed = seed
         self.train_size = .05
         self.test_size = .1
@@ -230,10 +230,10 @@ if __name__ == "__main__":
     #data_paths = ["yelp-gte-K14.csv","yelp-gte-K13.csv","yelp-gte-K12.csv","yelp-gte-K11.csv","yelp-gte-K10.csv","yelp-gte-K9.csv","yelp-gte-K8.csv","yelp-gte-K7.csv","yelp-gte-K6.csv","yelp-gte-K5.csv","last-fm-K14.csv","last-fm-K13.csv","yelp-gte-K4.csv","last-fm-K12.csv","last-fm-K11.csv","last-fm-K10.csv","last-fm-K9.csv","yelp-gte-K3.csv","last-fm-K8.csv","last-fm-K7.csv","last-fm-K6.csv","yelp-gte-K2.csv","last-fm-K5.csv","last-fm-K4.csv","last-fm-K3.csv","yelp-gte.csv","last-fm-K2.csv","last-fm.csv"]
     data_paths = [
         "datasets/Protocol/ksampling/ciaodvd.csv",
+        "datasets/Protocol/ksampling/eachmovie.csv",
         "datasets/Protocol/ksampling/ml-1m.csv",
         "datasets/Protocol/ksampling/ml-100k.csv",
-        "datasets/Protocol/ksampling/movietweetings.csv",
-        "datasets/Protocol/ksampling/eachmovie.csv"
+        "datasets/Protocol/ksampling/movietweetings.csv"
     ]
 
     k_values = list(range(2, 15))
@@ -242,15 +242,15 @@ if __name__ == "__main__":
 
     for path in data_paths:
         k_samples_path.append(path)
-    s = 0
-    alphas = [1.1, 1.35, 1.5, 1.7, 1.9]
-    windows = [(200, 100), (400, 200), (600, 300)]
-    model_k = [60]
+        for k_value in k_values:
+            k_samples_path.append("{}-K{}.csv".format(path.split(".")[0], k_value))
+
+    #k_samples_path.append("datasets/Protocol/ksampling/music-playlist.csv")
+    seeds = [0, 1, 2]
     experimenter = Experimenter()
-    for path in k_samples_path:
-        for k in model_k:
-            experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=k, seed=s))    
-            for alpha in alphas:
-                for lambda_l, lambda_s in windows:
-                    experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=k, meta=FloatLR(lambda_l, lambda_s, alpha)))
+
+    for path in k_samples_path[::-1]:
+        for s in seeds:
+            experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=40, seed=s))
+
     experimenter.run()
