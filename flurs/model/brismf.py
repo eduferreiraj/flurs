@@ -47,8 +47,8 @@ class BRISMF(BaseEstimator):
         """
 
         if self.observer:
-            self.observer.register_user(ua)
-            lrate = self.observer.learn_rate(ua)
+            self.observer.register('u{}'.format(ua))
+            self.observer.register('i{}'.format(ia))
         else:
             lrate = self.learn_rate
 
@@ -59,10 +59,14 @@ class BRISMF(BaseEstimator):
         err = rating - pred
 
         u_grad = (err * i_vec - self.l2_reg_u * u_vec)
-        next_u_vec = u_vec + lrate * u_grad
+        if self.observer:
+            self.observer.profile_difference(ia, 'u{}'.format(ua), u_grad)
+        next_u_vec = u_vec + (self.observer.learn_rate('u{}'.format(ua)) if self.observer else self.learn_rate) * u_grad
 
         i_grad = (err * u_vec - self.l2_reg_i * i_vec)
-        next_i_vec = i_vec + self.learn_rate * i_grad
+        if self.observer:
+            self.observer.profile_difference(ua, 'i{}'.format(ia), i_grad)
+        next_i_vec = i_vec + (self.observer.learn_rate('i{}'.format(ia)) if self.observer else self.learn_rate) * i_grad
 
         next_u_vec[0] = 1.
         next_i_vec[1] = 1.
@@ -74,7 +78,3 @@ class BRISMF(BaseEstimator):
 
         self.A[ua] = next_u_vec
         self.B[ia] = next_i_vec
-
-        if self.observer:
-            u_diff = u_vec - next_u_vec
-            self.observer.profile_difference(ua, u_grad)

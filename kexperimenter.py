@@ -198,6 +198,7 @@ class Experimenter:
                 self.send_email(subject, body)
            # else:
            #     self.send_email(subject, report)
+        self.send_email("Experimentation Finished", "Thebfollowing experi    mentation finished: \n{}".format(report))
 
     def send_email(self, subject, body):
         sent_from = self.gmail_user

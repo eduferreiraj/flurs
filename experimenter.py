@@ -198,6 +198,7 @@ class Experimenter:
                 self.send_email(subject, body)
            # else:
            #     self.send_email(subject, report)
+        self.send_email("Experimentation Finished", "Thebfollowing experimentation finished: \n{}".format(report))
 
     def send_email(self, subject, body):
         sent_from = self.gmail_user
@@ -233,7 +234,8 @@ if __name__ == "__main__":
         "datasets/Protocol/ksampling/ml-1m.csv",
         "datasets/Protocol/ksampling/ml-100k.csv",
         "datasets/Protocol/ksampling/movietweetings.csv",
-        "datasets/Protocol/ksampling/eachmovie.csv"
+        "datasets/Protocol/ksampling/eachmovie-K4.csv",
+        "datasets/Protocol/ksampling/music-listen.csv"
     ]
 
     k_values = list(range(2, 15))
@@ -245,12 +247,12 @@ if __name__ == "__main__":
     s = 0
     alphas = [1.1, 1.35, 1.5, 1.7, 1.9]
     windows = [(200, 100), (400, 200), (600, 300)]
-    model_k = [60]
+    model_k = [40]
     experimenter = Experimenter()
     for path in k_samples_path:
         for k in model_k:
             experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=k, seed=s))    
             for alpha in alphas:
                 for lambda_l, lambda_s in windows:
-                    experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=k, meta=FloatLR(lambda_l, lambda_s, alpha)))
+                    experimenter.append(Configuration(BASE_PATH + path, MFRecommender, k=k, meta=FloatLR(lambda_l, lambda_s, alpha)))
     experimenter.run()

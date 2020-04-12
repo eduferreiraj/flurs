@@ -14,26 +14,26 @@ class FloatLR(MetaRecommender):
         # create log configuration
         self.logger = logging.getLogger("experimenter.metarecommender")
 
-    def register_user(self, u_id):
-        if not u_id in self.short_term:
-            self.short_term[u_id] = FloatMean(self.lambda_s)
-            self.long_term[u_id] = FloatMean(self.lambda_l)
-            self.deviation[u_id] = FloatSTD(self.long_term[u_id])
-            self.learn_vector[u_id] = self.recommender.learn_rate
+    def register(self, id):
+        if not id in self.short_term:
+            self.short_term[id] = FloatMean(self.lambda_s)
+            self.long_term[id] = FloatMean(self.lambda_l)
+            self.deviation[id] = FloatSTD(self.long_term[id])
+            self.learn_vector[id] = self.recommender.learn_rate
 
-    def profile_difference(self, u_id, u_grad):
-        self.update_metric(u_id, u_grad.std())
-        if self.deviation[u_id].get() == 0.0:
+    def profile_difference(self, _, id, grad):
+        self.update_metric(id, grad.std())
+        if self.deviation[id].get() == 0.0:
             return
-        diff = self.short_term[u_id].get() - self.long_term[u_id].get()
-        change = (diff/self.deviation[u_id].get())
+        diff = self.short_term[id].get() - self.long_term[id].get()
+        change = (diff/self.deviation[id].get())
         change_coef = self.alpha**change
-        self.learn_vector[u_id] *= change_coef
+        self.learn_vector[id] *= change_coef
 
-    def update_metric(self, u_id, value):
-        self.short_term[u_id].next(value)
-        self.long_term[u_id].next(value)
-        self.deviation[u_id].next(value)
+    def update_metric(self, id, value):
+        self.short_term[id].next(value)
+        self.long_term[id].next(value)
+        self.deviation[id].next(value)
 
     def parameters_formater(self):
         return "Long Mean:{} Short Mean:{} Alpha:{}"
@@ -41,5 +41,5 @@ class FloatLR(MetaRecommender):
     def parameters(self):
         return [self.lambda_l, self.lambda_s, self.alpha]
 
-    def learn_rate(self, user):
-        return self.learn_vector[user]
+    def learn_rate(self, id):
+        return self.learn_vector[id]

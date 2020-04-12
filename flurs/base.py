@@ -52,8 +52,6 @@ class RecommenderMixin(object):
             user (User): User.
 
         """
-        if self.observer:
-            self.observer.register_user(user)
         self.n_user += 1
 
     def is_new_item(self, i):

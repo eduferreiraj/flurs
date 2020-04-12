@@ -119,7 +119,6 @@ class Evaluator(object):
             update_time = (time.process_time() - start)
 
             # (where the correct item is ranked, correct rating, predicted rating, user index, rec time, update time)
-            # (top-1 score, where the correct item is ranked, rec time, update time)
             yield rank, e.rating, rating_pred, e.user.index, recommend_time, update_time
 
     def recommend(self, test_events):
