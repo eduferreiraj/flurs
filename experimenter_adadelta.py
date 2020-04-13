@@ -2,7 +2,7 @@ from flurs.datasets import csv_loader
 from flurs.recommender import BRISMFRecommender, MFRecommender
 from flurs.evaluator import Evaluator
 from flurs.forgetting import NoForgetting
-from flurs.meta_recommender import NoMeta, FloatLR, AdaDelta, UserAdaDelta
+from flurs.meta_recommender import NoMeta, AdaDrift, AdaDelta, UserAdaDelta
 from os.path import exists
 import logging, os, sys, datetime, smtplib, traceback, time
 import numpy as np
@@ -197,7 +197,7 @@ class Experimenter:
 
 if __name__ == "__main__":
     # Absolute
-    BASE_PATH = "D:\\Jean\\"
+    BASE_PATH = "D:\\recsys\\"
 
     # Relatives
     LOG_PATH = 'FluRS\\log\\'

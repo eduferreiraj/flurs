@@ -2,7 +2,7 @@ from .meta_recommender import MetaRecommender
 from ..utils.float_metric import FloatSTD, FloatMean
 import logging
 class AdaDelta(MetaRecommender):
-    def __init__(self, learn_rate=1.0, epsilon = 0.0000001,decay):
+    def __init__(self, decay, learn_rate=1.0, epsilon = 1e-6):
         self.learn_rate = learn_rate
         self.mean = FloatMean(decay)
         self.epsilon = epsilon

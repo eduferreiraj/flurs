@@ -14,7 +14,7 @@ class CoolingLearning(MetaRecommender):
         if not u_id in self.users:
             self.users[u_id] = 0
 
-    def profile_difference(self, _, u_id, _):
+    def profile_difference(self, i_id, u_id, _):
         self.users[u_id] += 1
 
     def learn_rate(self, user):
