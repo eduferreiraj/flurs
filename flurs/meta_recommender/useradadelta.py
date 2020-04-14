@@ -4,7 +4,7 @@ import logging
 class UserAdaDelta(MetaRecommender):
     def __init__(self, decay, learn_rate=1.0, epsilon=0.0000001):
         self.decay = decay
-        self.learn_rate = learn_rate
+        self.base_learn_rate = learn_rate
         self.user_mean = {}
         self.epsilon = epsilon
         # create log configuration
@@ -18,4 +18,4 @@ class UserAdaDelta(MetaRecommender):
         self.user_mean[id].update(grad.std())
 
     def learn_rate(self, id):
-        return self.learn_rate / (self.learn_vector[id].get() + self.epsilon)
+        return self.base_learn_rate / (self.learn_vector[id].get() + self.epsilon)
