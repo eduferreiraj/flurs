@@ -2,7 +2,7 @@ from .meta_recommender import MetaRecommender
 from ..utils.float_metric import FloatSTD, FloatMean
 import logging
 class FloatLR(MetaRecommender):
-    def __init__(self, l_decay, s_decay, alpha):
+    def __init__(self, lambda_l, lambda_s, alpha):
         self.lambda_s = lambda_s
         self.lambda_l = lambda_l
         self.alpha = alpha
