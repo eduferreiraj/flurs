@@ -1,9 +1,9 @@
 from flurs.datasets import csv_loader
 from flurs.recommender import BRISMFRecommender, MFRecommender
-from flurs.forgetting import ForgetUnpopularItems, NoForgetting, MappedUserFactorFading, UserFactorFading, SDUserFactorFading
 from flurs.evaluator import Evaluator
-from flurs.meta_recommender import BUP, FloatLR, NoMeta
-from flurs.drift_detection import ADWIN
+from flurs.forgetting import NoForgetting
+from flurs.meta_recommender import NoMeta, BUP
+from flurs.drift_detection import EDDM, DDM
 from os.path import exists
 import logging, os, sys, datetime, smtplib, traceback, time
 import numpy as np
@@ -29,13 +29,12 @@ class Recall:
 
 
 class Configuration:
-    def __init__(self, data_path, Recommender, k=80, l2_reg= .01, learn_rate=.02, forgetting=NoForgetting(alpha=None), meta=NoMeta(), seed=None):
+    def __init__(self, data_path, Recommender, k=80, l2_reg= .01, learn_rate=.02, forgetting=NoForgetting(alpha=None), meta=NoMeta(), seed=None, exp_name = ""):
+        self.data_path = data_path
         self.seed = seed
-        self.train_size = .05
-        self.test_size = .1
+        self.train_size = .2
+        self.test_size = .3
         self.status = "..."
-        self.duration = None
-        self.start_time = None
         self.configuration = {
             "recommender" : Recommender.__name__,
             "learn_rate" : learn_rate,
@@ -47,27 +46,9 @@ class Configuration:
             "meta_param": " - "
         }
 
-        if not forgetting.__class__.__name__ == "NoForgetting":
-            self.configuration["forgetting"] = forgetting.__class__.__name__
-            self.configuration["forgetting_param"] = " ".join(str(param) for param in forgetting.parameters())
-
-
-        if not meta.__class__.__name__ == "NoMeta":
-            self.configuration["meta"] = meta.__class__.__name__
-            self.configuration["meta_param"] = " ".join(str(param) for param in meta.parameters())
-
-        self.data_path = data_path
         self.__recommender = Recommender(k, l2_reg, learn_rate, forgetting, seed)
         self.meta = meta
-
-        self.exp_name = self.data_path.split("/")[-1].replace('.csv', '') + "_" + self.configuration["recommender"]
-        if self.configuration["meta"] != " - ":
-            self.exp_name += "_" + self.configuration["meta"] + self.configuration["meta_param"].replace(" ", "_")
-        if self.configuration["forgetting"] != " - ":
-            self.exp_name += "_" + self.configuration["forgetting"] + self.configuration["forgetting_param"].replace(" ", "_")
-        if self.seed != None:
-            self.exp_name += "_SEED_" + str(self.seed)
-
+        self.exp_name = exp_name
 
     def recommender(self):
         return self.__recommender
@@ -127,7 +108,7 @@ class Configuration:
         self.start_time = time.process_time()
         self.logger.info('converting data into FluRS input object')
 
-        self.result_file = BASE_PATH + "flurs/results/k{}/{}.dat".format(self.configuration["k"], self.exp_name)
+        self.result_file = BASE_PATH + "FluRS\\results\\k{}\\{}.dat".format(self.configuration["k"], self.exp_name)
         if exists(self.result_file):
             return
         self.data = csv_loader(self.data_path)
@@ -180,6 +161,7 @@ class Experimenter:
                     max_n_epoch=20
                 )
 
+                experimenter.meta.activate()
                 logging.info('incrementally predict, evaluate and update the recommender')
                 logging.info("Abrindo arquivo {} ...".format(experimenter.result_file))
                 with open(experimenter.result_file, 'w+') as f:
@@ -196,7 +178,8 @@ class Experimenter:
             except Exception as e:
                 subject = '[EXCEPT] {}'.format(e)
                 body = 'Ooops, something happened in the experimentation.\n\nException:{}\n\n{}'.format(traceback.format_exc(), datetime.datetime.now())
-                self.send_email(subject, body)
+                print(subject)
+                print(body)
            # else:
            #     self.send_email(subject, report)
 
@@ -215,10 +198,10 @@ class Experimenter:
 
 if __name__ == "__main__":
     # Absolute
-    BASE_PATH = "/home/eduardo/recsys/"
+    BASE_PATH = "D:\\recsys\\"
 
     # Relatives
-    LOG_PATH = 'flurs/log/'
+    LOG_PATH = 'FluRS\\log\\'
 
 
     RECALL_AT = 10
@@ -228,32 +211,29 @@ if __name__ == "__main__":
     logging.root.setLevel(level=logging.INFO)
     logger.info('running %s' % ' '.join(sys.argv))
 
-    data_paths = [
-        "datasets/Protocol/ksampling/ciaodvd-gte.csv",
-        "datasets/Protocol/ksampling/eachmovie-gte.csv",
-        "datasets/Protocol/ksampling/ml-1m-gte.csv",
-        "datasets/Protocol/ksampling/ml-100k-gte.csv",
-        "datasets/Protocol/ksampling/movietweetings-gte.csv",
-        "datasets/Protocol/ksampling/music-playlist.csv"
-    ]
-
-    k_values = list(range(2, 15))
-
-    # for path in data_paths:
-    #     generate_k_samples(path, k_values)
-
-    k_samples_path = []
-
-    for path in data_paths:
-        for k_value in k_values:
-            k_samples_path.append("{}-K{}.csv".format(path.split(".")[0], k_value))
-
-
-    boosts = [1.5, 2, 4]
     experimenter = Experimenter()
+    k=60
     learn_rate=.02
-    for boosted_lr in boosts:
-        for s in seeds:
-            experimenter.append(Configuration(BASE_PATH + path, MFRecommender, learn_rate=learn_rate, k=40, meta=BUP(boosted_lr * learn_rate, ADWIN), seed=s))
+    boosted_lrs = [learn_rate*2, learn_rate*4, learn_rate*8]
+    Detectors = [EDDM, DDM]
+
+    for boosted_lr in boosted_lrs:
+        for Detector in Detectors:
+            data_paths = [
+                "datasets\\Protocol\\CD\\personality-pruned.csv",
+                "datasets\\Protocol\\CD\\nf-l2m-pruned.csv"
+            ]
+
+
+            for path in data_paths:
+                experimenter.append(Configuration(BASE_PATH + path, BRISMFRecommender, k=k, meta=BUP(boosted_lr, Detector), seed=0, exp_name="{}_BRISMFRecommender_BUP_N{}_{}".format(path.split('\\')[-1].split('.')[0], boosted_lr, Detector.__name__)))
+
+            data_paths = [
+                "datasets\\Protocol\\CD\\netflix-gte-pruned.csv",
+                "datasets\\Protocol\\CD\\last-fm-pruned.csv"
+            ]
+
+            for path in data_paths:
+                experimenter.append(Configuration(BASE_PATH + path, MFRecommender, k=k, meta=BUP(boosted_lr, Detector), seed=0, exp_name="{}_MFRecommender_BUP_N{}_{}".format(path.split('\\')[-1].split('.')[0], boosted_lr, Detector.__name__)))
 
     experimenter.run()
