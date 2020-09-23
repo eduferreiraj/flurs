@@ -6,7 +6,6 @@ import numpy as np
 
 
 class BRISMFRecommender(BRISMF, RecommenderMixin):
-
     """Biased Regularized Incremental Simultaneous Matrix Factorization
 
     References
@@ -17,10 +16,10 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
 
     """
 
-
-    def initialize(self, static=False):
+    def initialize(self):
+        """Initialize the BRISMF's model class.
+        """
         super(BRISMF, self).initialize()
-        self.static = static
 
     def register_user(self, user):
         """Add matrix space to handle the new user if needed.
@@ -76,7 +75,7 @@ class BRISMFRecommender(BRISMF, RecommenderMixin):
 
         Args:
             user (integer): User ID.
-            cadidates (numpy.Array): Integer vector with all candidates.
+            cadidates (numpy.Array): Integer vector with all candidates (item's id).
         Returns:
             numpy array: Vector with each score from the candidates.
 

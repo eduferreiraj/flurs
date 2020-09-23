@@ -7,7 +7,7 @@ class AdaDelta(MetaRecommender):
         self.mean = FloatMean(decay)
         self.epsilon = epsilon
 
-    def profile_difference(self, _, id, grad):
+    def profile_difference(self, _1,  _2, id, grad):
         self.mean.update(grad.std())
         self.variation = self.base_learn_rate / (self.mean.get() + self.epsilon)
 

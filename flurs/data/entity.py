@@ -53,7 +53,6 @@ class User(Base):
 
 
 class Item(Base):
-
     def __repr__(self):
         if len(self.feature) == 1 and self.feature[0] == 0.:
             return 'Item(index={})'.format(self.index)
@@ -62,7 +61,6 @@ class Item(Base):
 
 
 class Event(object):
-
     def __init__(self, user, item, rating=1., context=np.array([0.])):
         self.user = user
         self.item = item

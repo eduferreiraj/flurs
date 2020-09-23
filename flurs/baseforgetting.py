@@ -4,6 +4,7 @@ class BaseForgetting:
     def reset_forgetting(self):
         """Reset the model and get ready to use.
         """
+        return
 
     def register_user(self, user):
         """Add a new user to the model.
@@ -50,16 +51,3 @@ class BaseForgetting:
             last_user_vec (numpy.array): Latent factor vector with user attributes not yet updated.
         """
         return user_vec
-
-    def __repr__(self):
-        if self.alpha:
-            name = "{}(alpha={})".format(self.__class__.__name__, self.alpha)
-        else:
-            name = "{}()".format(self.__class__.__name__)
-        return name
-
-    def parameters(self):
-        return ""
-
-    def mean(self):
-        return

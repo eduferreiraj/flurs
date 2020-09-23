@@ -27,8 +27,7 @@ class Evaluator(object):
         self.repeat = repeat
 
         # create a ring buffer
-        # save items which are observed in most recent `maxlen` events
-        self.item_buffer = deque(maxlen=maxlen)
+        self.item_buffer = deque()
 
         # create log configuration
         self.logger = logging.getLogger("experimenter.evaluator")
@@ -36,11 +35,11 @@ class Evaluator(object):
     def fit(self, train_events, test_events, max_n_epoch=20):
         """Train a model using the first 30% positive events to avoid cold-start.
 
-        Evaluation of this batch training is done by using the next 20% positive events.
+        Evaluation of this batch training is done by using the next 20% events.
         After the batch SGD training, the models are incrementally updated by using the 20% test events.
 
         Args:
-            train_events (list of Event): Positive training events (0-30%).
+            train_events (list of Event): Training events (0-30%).
             test_events (list of Event): Test events (30-50%).
             max_n_epoch (int): Maximum number of epochs for the batch training.
 
@@ -103,7 +102,7 @@ class Evaluator(object):
             test_events (list of Event): Positive test events.
 
         Returns:
-            list of tuples: (score recall@1, rank, recommend time, update time)
+            list of tuples: (rank, rating ground-truth, rating predicted, user id, recommend time, update time)
 
         """
         self.logger.debug("------------------------------")
@@ -121,19 +120,19 @@ class Evaluator(object):
             # (where the correct item is ranked, correct rating, predicted rating, user index, rec time, update time)
             yield rank, e.rating, rating_pred, e.user.index, recommend_time, update_time
 
-    def recommend(self, test_events):
-        """Just recommend, without updating the model.
-
-        Args:
-            test_events (list of Event): Positive test events.
-
-        Returns:
-            list of tuples: (score recall{at}1, rank, recommend time)
-
-        """
-        for i, e in enumerate(test_events):
-            scores, rank, recommend_time = self.recommend_event(e)
-            yield scores[0], rank, recommend_time
+    # def recommend(self, test_events):
+    #     """Just recommend, without updating the model.
+    #
+    #     Args:
+    #         test_events (list of Event): Positive test events.
+    #
+    #     Returns:
+    #         list of tuples: (score recall{at}1, rank, recommend time)
+    #
+    #     """
+    #     for i, e in enumerate(test_events):
+    #         scores, rank, recommend_time = self.recommend_event(e)
+    #         yield scores[0], rank, recommend_time
 
     def recommend_event(self, e):
 
@@ -164,22 +163,21 @@ class Evaluator(object):
         """Batch update called by the fitting method.
 
         Args:
-            train_events (list of Event): Positive training events.
+            train_events (list of Event): Training events.
             test_events (list of Event): Test events.
             n_epoch (int): Number of epochs for the batch training.
 
         """
-        prev_err = np.inf
-        curr_err = 100
         n_epoch = 1
         n_chunks = 20
-        np.random.shuffle(train_events)
-        train_chunks = np.array_split(train_events, n_chunks)
-        convergence = np.inf
+        curr_err = 100
         converged = False
+        prev_err = np.inf
+        convergence = np.inf
         convergence_criteria = .00001
         while not converged and n_epoch <= max_n_epoch:
-            np.random.shuffle(train_chunks)
+            np.random.shuffle(train_events)
+            train_chunks = np.array_split(train_events, n_chunks)
             for chunk in train_chunks:
                 for e in chunk:
                     self.rec.update(e)
@@ -191,7 +189,6 @@ class Evaluator(object):
                 if converged:
                     break
             n_epoch += 1
-        self.rec.forgetting.mean()
         self.logger.info('Epochs:{} Convergence:{}'.format(n_epoch, convergence))
 
 

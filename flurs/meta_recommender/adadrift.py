@@ -21,7 +21,7 @@ class AdaDrift(MetaRecommender):
             self.deviation[id] = FloatSTD(self.long_term[id])
             self.learn_vector[id] = self.recommender.learn_rate
 
-    def profile_difference(self, _, id, grad):
+    def profile_difference(self, _1,  _2, id, grad):
         self.update_metric(id, grad.std())
         if self.deviation[id].get() == 0.0:
             return

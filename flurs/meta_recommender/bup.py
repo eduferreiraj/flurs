@@ -1,5 +1,6 @@
 from .meta_recommender import MetaRecommender
 import logging
+import numpy as np
 
 class BUP(MetaRecommender):
     def __init__(self, boosted_lr, Detector):
@@ -15,20 +16,18 @@ class BUP(MetaRecommender):
             if not id in self.u_detectors:
                 self.u_detectors[id] = self.Detector()
 
-    def profile_difference(self, _, u_id, u_grad):
+    def profile_difference(self, rating, i_id, u_id, u_grad):
         if u_id[0] == 'u':
             self.u_detectors[u_id].add_element(u_grad.std())
             if self.u_detectors[u_id].detected_change():
-                print("[{}] {}".format("C", u_id))
                 if u_id in self.u_profile:
-                    self.recommender.A[u_id] = self.u_profile[u_id]
+                    self.recommender.A[int(u_id[1:])] = self.u_profile[u_id]
                     del self.u_profile[u_id]
             elif self.u_detectors[u_id].detected_warning_zone():
-                print("[{}] {}".format("W", u_id))
                 i_vec = self.recommender.B[i_id]
 
                 if not u_id in self.u_profile:
-                    u_vec = self.recommender.A[u_id]
+                    u_vec = self.recommender.A[int(u_id[1:])]
                 else:
                     u_vec = self.u_profile[u_id]
 
